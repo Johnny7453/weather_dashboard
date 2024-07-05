@@ -1,7 +1,7 @@
 from flask import Flask
 from dash import Dash, html, dcc
 from dash.dependencies import Input, Output
-# import plotly.express as px
+import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import dash_bootstrap_components as dbc
@@ -41,12 +41,12 @@ fig.update_layout(
     title='Temperature and Humidity Over Time',
     xaxis=dict(title='Date'),
     yaxis=dict(
-        title='Temperature',
+        title='Temperature (°C)',
         titlefont=dict(color='red'),
         tickfont=dict(color='red')
     ),
     yaxis2=dict(
-        title='Humidity',
+        title='Humidity (%)',
         titlefont=dict(color='blue'),
         tickfont=dict(color='blue'),
         overlaying='y',
@@ -57,12 +57,19 @@ fig.update_layout(
 )
 
 
+# Create a bar graph for Rain data
+bar_fig = px.bar(df, x='Date', y='Rain', title='Amount of Rain', text = 'Rain')
+bar_fig.update_layout(yaxis_title='Rain (mm)')
+
 app.layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.H1("Weather Dashboard"), className="mb-2")
     ]),
      dbc.Row([
         dbc.Col(dcc.Graph(id='time-series-graph', figure=fig), className="mb-4")
+    ]),
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='rain-bar-graph', figure=bar_fig), className="mb-4")
     ]),
 ], className="container")
 
