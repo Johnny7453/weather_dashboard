@@ -1,5 +1,6 @@
 from flask import Flask
 from dash import Dash, html, dcc
+from dash.dependencies import Input, Output
 import plotly.express as px
 import pandas as pd
 import dash_bootstrap_components as dbc
@@ -15,11 +16,15 @@ df = pd.read_csv('temperature.csv', delimiter=';')
 
 df['Date'] = pd.to_datetime(df['Date'])
 
-# Create a sample plot
-#fig = px.bar(df, x='Date', y='Temperature')
 
-# Create a time series plot
-fig = px.line(df, x='Date', y='Temperature', title='Temperature Over Time')
+# Melt the dataframe to long format
+df_long = pd.melt(df, id_vars=['Date'], value_vars=['Temperature', 'Moisture'], 
+                  var_name='Variable', value_name='Value')
+
+
+# Create a time series plot with both Temperature and Moisture
+fig = px.line(df_long, x='Date', y='Value', color='Variable', title='Temperature and Moisture Over Time')
+
 
 app.layout = dbc.Container([
     dbc.Row([
@@ -28,8 +33,8 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col(html.H2("Temperature"), className="mb-2")
     ]),
-    dbc.Row([
-        dbc.Col(dcc.Graph(figure=fig), className="mb-4")
+     dbc.Row([
+        dbc.Col(dcc.Graph(id='time-series-graph', figure=fig), className="mb-4")
     ]),
 ], className="container")
 
