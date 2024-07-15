@@ -19,10 +19,10 @@ df = pd.read_csv('data/temperature.csv', delimiter=',')
 
 # Checks
 # Print the first few rows of the DataFrame
-print(df.head())
+# print(df.head())
 
 # Check the data types of the columns
-print(df.dtypes)
+# print(df.dtypes)
 
 df['Date'] = pd.to_datetime(df['Date'], yearfirst=True, utc=True, format='ISO8601')
 
