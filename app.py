@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import pandas as pd
 import dash_bootstrap_components as dbc
 from collections import OrderedDict
+import joblib
 
 # Initialize Flask
 server = Flask(__name__)
@@ -14,9 +15,24 @@ server = Flask(__name__)
 app = Dash(__name__, server=server, url_base_pathname='/dashboard/', external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Example data
-df = pd.read_csv('temperature.csv', delimiter=';')
+df = pd.read_csv('data/temperature.csv', delimiter=',')
 
-df['Date'] = pd.to_datetime(df['Date'])
+# Checks
+# Print the first few rows of the DataFrame
+print(df.head())
+
+# Check the data types of the columns
+print(df.dtypes)
+
+df['Date'] = pd.to_datetime(df['Date'], yearfirst=True, utc=True, format='ISO8601')
+
+# Load the trained model
+# model = joblib.load('modelling/temperature_model.pkl')
+
+# Create a function for making predictions
+def predict_temperature(moisture, rain, temp_lag1, temp_lag2):
+    prediction = model.predict([[moisture, rain, temp_lag1, temp_lag2]])
+    return prediction[0]
 
 # Create a time series plot with two y-axes
 fig = go.Figure()
@@ -40,7 +56,7 @@ fig.add_trace(go.Scatter(
 # Update layout for second y-axis
 fig.update_layout(
     title='Temperature and Humidity Over Time',
-    xaxis=dict(title='Date'),
+    xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'),
     yaxis=dict(
         title='Temperature (°C)',
         titlefont=dict(color='red'),
@@ -58,9 +74,13 @@ fig.update_layout(
 )
 
 
+# Create a bar graph for Moisture data
+bar_fig_moisture = px.bar(df, x='Date', y='Moisture', title='Moisture', text = 'Moisture')
+bar_fig_moisture.update_layout(yaxis_title='Moisture (%)', xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'))
+
 # Create a bar graph for Rain data
-bar_fig = px.bar(df, x='Date', y='Rain', title='Amount of Rain', text = 'Rain')
-bar_fig.update_layout(yaxis_title='Rain (mm)')
+bar_fig_rain = px.bar(df, x='Date', y='Rain', title='Amount of Rain', text = 'Rain')
+bar_fig_rain.update_layout(yaxis_title='Rain (mm)', xaxis=dict(title='Date and Time', type='date', tickformat='%Y-%m-%d %H:%M'))
 
 app.layout = dbc.Container([
     dbc.Row([
@@ -69,8 +89,26 @@ app.layout = dbc.Container([
      dbc.Row([
         dbc.Col(dcc.Graph(id='time-series-graph', figure=fig), className="mb-4")
     ]),
+    # dbc.Row([
+    #     dbc.Col([
+    #         html.H4("Predict temperature"),
+    #         html.Label('Moisture:'),
+    #         dcc.Input(id='input-moisture', type='number', value=30, min=0, max=100),
+    #         html.Label('Rain:'),
+    #         dcc.Input(id='input-rain', type='number', value=0, min=0, max=30),
+    #         html.Label('Temp Lag1:'),
+    #         dcc.Input(id='input-temp-lag1', type='number', value=20, min=-50, max=60),
+    #         html.Label('Temp Lag2:'),
+    #         dcc.Input(id='input-temp-lag2', type='number', value=19),
+    #         html.Button('Predict Temperature', id='predict-button', n_clicks=0),
+    #         html.Div(id='prediction-output')
+    #     ])
+    # ]),
     dbc.Row([
-        dbc.Col(dcc.Graph(id='rain-bar-graph', figure=bar_fig), className="mb-4")
+        dbc.Col(dcc.Graph(id='moisture-bar-graph', figure=bar_fig_moisture), className="mb-4")
+    ]),
+    dbc.Row([
+        dbc.Col(dcc.Graph(id='rain-bar-graph', figure=bar_fig_rain), className="mb-4")
     ]),
     dbc.Row([
         dbc.Col(html.Button('Show/Hide Data', id='toggle-table-button', n_clicks=0), className="mb-4")
@@ -123,9 +161,22 @@ app.layout = dbc.Container([
         id='table-container',
         style={'display': 'none'}  # Initially hide the table
         )
-    ]),
+    ])
 ], className="container")
 
+
+# Define the callback for prediction
+# @app.callback(
+#     Output('prediction-output', 'children'),
+#     [Input('predict-button', 'n_clicks')],
+#     [State('input-moisture', 'value'), State('input-rain', 'value'), 
+#      State('input-temp-lag1', 'value'), State('input-temp-lag2', 'value')]
+# )
+# def update_prediction(n_clicks, moisture, rain, temp_lag1, temp_lag2):
+#     if n_clicks > 0:
+#         predicted_temperature = predict_temperature(moisture, rain, temp_lag1, temp_lag2)
+#         return f'The predicted temperature is {predicted_temperature:.2f}°C'
+#     return ''
 
 # Define the callback to toggle the table visibility
 @app.callback(
