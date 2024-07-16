@@ -7,7 +7,10 @@ library(lubridate)
 
 ################################################
 
-cat("STARTING TO PREPROCESS THE DATA")
+cat("STARTING TO PREPROCESS THE DATA \n")
+
+CREATE_PREDICTION_DATA = TRUE
+prediction_data_since = "2024-07-15"
 
 # Setting the working directory by input
 
@@ -51,11 +54,16 @@ data <- data %>%
   )%>% select(-station, -year, -month, -day, -time, -hour, -minute) 
 
 
+if(CREATE_PREDICTION_DATA){
+  data_prediction <- subset(data, Date >= as.Date(prediction_data_since))
+  data <- subset(data, Date < as.Date(prediction_data_since)) 
+  write.csv(data_prediction, "temperature_prediction_data.csv", row.names = FALSE)
+}
 
 # Save the modified data to a CSV file
 write.csv(data, "temperature.csv", row.names = FALSE)
 
 
-cat("Data has been processed and saved to", csv_file, "\n")
+cat("Data has been processed and saved")
 
 

@@ -16,6 +16,7 @@ app = Dash(__name__, server=server, url_base_pathname='/dashboard/', external_st
 
 # Example data
 df = pd.read_csv('data/temperature.csv', delimiter=',')
+prediction_df = pd.read_csv('data/temperature_prediction_data.csv', delimiter=',')
 
 # Checks
 # Print the first few rows of the DataFrame
@@ -25,9 +26,31 @@ df = pd.read_csv('data/temperature.csv', delimiter=',')
 # print(df.dtypes)
 
 df['Date'] = pd.to_datetime(df['Date'], yearfirst=True, utc=True, format='ISO8601')
+prediction_df['Date'] = pd.to_datetime(prediction_df['Date'], yearfirst=True, utc=True, format='ISO8601')
+
+# Create lag features for temperature in the new data
+prediction_df['Temp_Lag1'] = prediction_df['Temperature'].shift(1)
+prediction_df['Temp_Lag2'] = prediction_df['Temperature'].shift(2)
+
+# Drop rows with NaN values created by lag features
+prediction_df = prediction_df.dropna()
+
+# Filter out dates in prediction_df that are already in df
+prediction_df = prediction_df[~prediction_df['Date'].isin(df['Date'])]
+
+# Define features for prediction
+X_new = prediction_df[['Moisture', 'Rain', 'Temp_Lag1', 'Temp_Lag2']]
 
 # Load the trained model
 model = joblib.load('modelling/temperature_model.pkl')
+
+# Make predictions on the new data
+prediction_df['Predicted_Temperature'] = model.predict(X_new)
+
+
+# Combine the original data with the new predictions
+combined_df = pd.concat([df, prediction_df], ignore_index=True)
+
 
 # Create a function for making predictions
 def predict_temperature(moisture, rain, temp_lag1, temp_lag2):
@@ -39,7 +62,6 @@ def predict_temperature(moisture, rain, temp_lag1, temp_lag2):
     })
     prediction = model.predict(features)
 
-    # prediction = model.predict([[moisture, rain, temp_lag1, temp_lag2]])
     return prediction[0]
 
 # Create a time series plot with two y-axes
@@ -47,15 +69,23 @@ fig = go.Figure()
 
 # Add Temperature trace
 fig.add_trace(go.Scatter(
-    x=df['Date'], y=df['Temperature'],
+    x=combined_df['Date'], y=combined_df['Temperature'],
     name='Temperature',
     yaxis='y1',
     line=dict(color='red')
 ))
 
+# Add Predicted Temperature trace
+fig.add_trace(go.Scatter(
+    x=combined_df['Date'], y=combined_df['Predicted_Temperature'],
+    name='Predicted Temperature',
+    yaxis='y1',
+    line=dict(color='orange', dash='dash')
+))
+
 # Add Humidity trace with a second y-axis
 fig.add_trace(go.Scatter(
-    x=df['Date'], y=df['Moisture'],
+    x=combined_df['Date'], y=combined_df['Moisture'],
     name='Humidity',
     yaxis='y2',
     line=dict(color='blue')
@@ -83,11 +113,11 @@ fig.update_layout(
 
 
 # Create a bar graph for Moisture data
-bar_fig_moisture = px.bar(df, x='Date', y='Moisture', title='Moisture', text = 'Moisture')
+bar_fig_moisture = px.bar(combined_df, x='Date', y='Moisture', title='Moisture', text = 'Moisture')
 bar_fig_moisture.update_layout(yaxis_title='Moisture (%)', xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'))
 
 # Create a bar graph for Rain data
-bar_fig_rain = px.bar(df, x='Date', y='Rain', title='Amount of Rain', text = 'Rain')
+bar_fig_rain = px.bar(combined_df, x='Date', y='Rain', title='Amount of Rain', text = 'Rain')
 bar_fig_rain.update_layout(yaxis_title='Rain (mm)', xaxis=dict(title='Date and Time', type='date', tickformat='%Y-%m-%d %H:%M'))
 
 app.layout = dbc.Container([
@@ -124,8 +154,8 @@ app.layout = dbc.Container([
     dbc.Row([
         dbc.Col(dash_table.DataTable(
             id='data-table',
-            columns=[{"name": i, "id": i} for i in df.columns],
-            data=df.to_dict('records'),
+            columns=[{"name": i, "id": i} for i in combined_df.columns],
+            data=combined_df.to_dict('records'),
             editable=True,
             page_size=10,
             style_table={'overflowX': 'auto'},
