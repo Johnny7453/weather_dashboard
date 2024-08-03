@@ -28,10 +28,6 @@ prediction_df = pd.read_csv('data/temperature_prediction_data.csv', delimiter=',
 df['Date'] = pd.to_datetime(df['Date'], yearfirst=True, utc=True, format='ISO8601')
 prediction_df['Date'] = pd.to_datetime(prediction_df['Date'], yearfirst=True, utc=True, format='ISO8601')
 
-# Create lag features for temperature in the new data
-prediction_df['Temp_Lag1'] = prediction_df['Temperature'].shift(1)
-prediction_df['Temp_Lag2'] = prediction_df['Temperature'].shift(2)
-
 # Drop rows with NaN values created by lag features
 prediction_df = prediction_df.dropna()
 
@@ -39,7 +35,7 @@ prediction_df = prediction_df.dropna()
 prediction_df = prediction_df[~prediction_df['Date'].isin(df['Date'])]
 
 # Define features for prediction
-X_new = prediction_df[['Moisture', 'Rain', 'Temp_Lag1', 'Temp_Lag2']]
+X_new = prediction_df[['Moisture', 'Rain', 'Wind_speed', 'Air_pressure']]
 
 # Load the trained model
 model = joblib.load('modelling/temperature_model.pkl')
@@ -53,12 +49,12 @@ combined_df = pd.concat([df, prediction_df], ignore_index=True)
 
 
 # Create a function for making predictions
-def predict_temperature(moisture, rain, temp_lag1, temp_lag2):
+def predict_temperature(moisture, rain, Wind_speed, Air_pressure):
     features = pd.DataFrame({
         'Moisture': [moisture],
         'Rain': [rain],
-        'Temp_Lag1': [temp_lag1],
-        'Temp_Lag2': [temp_lag2]
+        'Wind_speed': [Wind_speed],
+        'Air_pressure': [Air_pressure]
     })
     prediction = model.predict(features)
 
@@ -117,8 +113,49 @@ bar_fig_moisture = px.bar(combined_df, x='Date', y='Moisture', title='Moisture',
 bar_fig_moisture.update_layout(yaxis_title='Moisture (%)', xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'))
 
 # Create a bar graph for Rain data
-bar_fig_rain = px.bar(combined_df, x='Date', y='Rain', title='Amount of Rain', text = 'Rain')
-bar_fig_rain.update_layout(yaxis_title='Rain (mm)', xaxis=dict(title='Date and Time', type='date', tickformat='%Y-%m-%d %H:%M'))
+# bar_fig_rain = px.bar(combined_df, x='Date', y='Rain', title='Amount of Rain', text = 'Rain')
+# bar_fig_rain.update_layout(yaxis_title='Rain (mm)', xaxis=dict(title='Date and Time', type='date', tickformat='%Y-%m-%d %H:%M'))
+
+
+# Create a bar plot for Rain data and add Wind Speed line trace
+fig_rain_wind = go.Figure()
+
+# Add Rain bar trace
+fig_rain_wind.add_trace(go.Bar(
+    x=combined_df['Date'], y=combined_df['Rain'],
+    name='Rain',
+    yaxis='y1',
+    marker=dict(color='blue')
+))
+
+# Add Humidity trace with a second y-axis
+fig_rain_wind.add_trace(go.Scatter(
+    x=combined_df['Date'], y=combined_df['Wind_speed'],
+    name='Wind speed',
+    yaxis='y2',
+    line=dict(color='lightpink')
+))
+
+# Update layout for second y-axis
+fig_rain_wind.update_layout(
+    title='Amount of Rain and Wind Speed Over Time',
+    xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'),
+    yaxis=dict(
+        title='Rain (mm)',
+        titlefont=dict(color='blue'),
+        tickfont=dict(color='blue')
+    ),
+    yaxis2=dict(
+        title='Wind Speed (m/s)',
+        titlefont=dict(color='lightpink'),
+        tickfont=dict(color='lightpink'),
+        overlaying='y',
+        side='right'
+    ),
+    legend=dict(x=0, y=1.2),
+    template='plotly_white'
+)
+
 
 app.layout = dbc.Container([
     dbc.Row([
@@ -134,10 +171,10 @@ app.layout = dbc.Container([
             dcc.Input(id='input-moisture', type='number', value=df.iloc[-1]['Moisture'], min=0, max=100),
             html.Label('Rain:'),
             dcc.Input(id='input-rain', type='number', value=df.iloc[-1]['Rain'], min=0, max=30),
-            html.Label('Temp Lag1:'),
-            dcc.Input(id='input-temp-lag1', type='number', value=df.iloc[-1]['Temperature'], min=-50, max=60),
-            html.Label('Temp Lag2:'),
-            dcc.Input(id='input-temp-lag2', type='number', value=df.iloc[-2]['Temperature'], min=-50, max=60),
+            html.Label('Wind speed:'),
+            dcc.Input(id='input-Wind-speed', type='number', value=df.iloc[-1]['Wind_speed'], min=0, max=10),
+            html.Label('Air pressure:'),
+            dcc.Input(id='input-Air-pressure', type='number', value=df.iloc[-1]['Air_pressure'], min=900, max=1100),
             html.Button('Predict Temperature', id='predict-button', n_clicks=0),
             html.Div(id='prediction-output')
         ])
@@ -146,7 +183,7 @@ app.layout = dbc.Container([
         dbc.Col(dcc.Graph(id='moisture-bar-graph', figure=bar_fig_moisture), className="mb-4")
     ]),
     dbc.Row([
-        dbc.Col(dcc.Graph(id='rain-bar-graph', figure=bar_fig_rain), className="mb-4")
+        dbc.Col(dcc.Graph(id='rain-bar-graph', figure=fig_rain_wind), className="mb-4")
     ]),
     dbc.Row([
         dbc.Col(html.Button('Show/Hide Data', id='toggle-table-button', n_clicks=0), className="mb-4")
@@ -208,11 +245,12 @@ app.layout = dbc.Container([
     Output('prediction-output', 'children'),
     [Input('predict-button', 'n_clicks')],
     [State('input-moisture', 'value'), State('input-rain', 'value'), 
-     State('input-temp-lag1', 'value'), State('input-temp-lag2', 'value')]
+    State('input-Wind-speed', 'value'), State('input-Air-pressure', 'value')]
 )
-def update_prediction(n_clicks, moisture, rain, temp_lag1, temp_lag2):
+
+def update_prediction(n_clicks, moisture, rain, Wind_speed, Air_pressure):
     if n_clicks > 0:
-        predicted_temperature = predict_temperature(moisture, rain, temp_lag1, temp_lag2)
+        predicted_temperature = predict_temperature(moisture, rain, Wind_speed, Air_pressure)
         return f'The predicted temperature is {predicted_temperature:.2f}°C'
     return ''
 

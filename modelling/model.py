@@ -14,15 +14,14 @@ df = pd.read_csv('../data/temperature.csv', delimiter=',')
 # Ensure the Date column is treated as a datetime object
 df['Date'] = pd.to_datetime(df['Date'], yearfirst=True, utc=True, format='ISO8601')
 
-# Create lag features for temperature
-df['Temp_Lag1'] = df['Temperature'].shift(1)
-df['Temp_Lag2'] = df['Temperature'].shift(2)
+# Variables that can be used in the model:
+# "highest_temperature","lowest_temperature","Moisture","Wind_speed","Rain","Air_pressure"
 
 # Drop rows with NaN values created by lag features
 df = df.dropna()
 
 # Define features and target
-X = df[['Moisture', 'Rain', 'Temp_Lag1', 'Temp_Lag2']]
+X = df[['Moisture', 'Rain', 'Wind_speed', 'Air_pressure']]
 y = df['Temperature']
 
 
