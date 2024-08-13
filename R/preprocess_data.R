@@ -10,7 +10,7 @@ library(lubridate)
 cat("STARTING TO PREPROCESS THE DATA \n")
 
 CREATE_PREDICTION_DATA = TRUE
-prediction_data_since = "2024-07-15"
+prediction_data_since = "2024-07-10"
 
 # Setting the working directory by input
 
