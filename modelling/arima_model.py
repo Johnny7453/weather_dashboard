@@ -20,7 +20,7 @@ df = pd.read_csv('../data/temperature.csv', delimiter=',')
 df['Date'] = pd.to_datetime(df['Date'], yearfirst=True, utc=True, format='ISO8601')
 
 # Set the Date column as the index
-df.set_index('Date', inplace=False)
+df.set_index('Date', inplace=True)
 
 # Plot the aurocorrelation_plot for analysis
 if(SHOW_ANALYSIS_PLOTS):
