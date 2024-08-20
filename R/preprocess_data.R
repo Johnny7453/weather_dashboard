@@ -10,7 +10,7 @@ library(lubridate)
 cat("STARTING TO PREPROCESS THE DATA \n")
 
 CREATE_PREDICTION_DATA = TRUE
-prediction_data_since = "2024-07-10"
+prediction_data_since = "2024-08-10"
 
 # Setting the working directory by input
 
@@ -40,8 +40,8 @@ data <- read_excel(excel_file)
 
 # Rename the columns
 colnames(data) <- c("station", "year", "month", "day", "time", "Temperature",
-                    "highest_temperature", "lowest_temperature", "Moisture", 
-                    "Wind_speed", "Rain", "Air_pressure")
+                    "highest_temperature", "lowest_temperature", "Wind_speed",
+                    "Rain", "Air_pressure", "Moisture")
 
 # Combine the time columns 
 #and remove extra columns
