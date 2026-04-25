@@ -21,7 +21,7 @@ df['Date'] = pd.to_datetime(df['Date'], yearfirst=True, utc=True, format='ISO860
 df = df.dropna()
 
 # Define features and target
-X = df[['Moisture', 'Rain', 'Wind_speed', 'Air_pressure']]
+X = df[['Moisture', 'Rain', 'Wind_speed', 'Air_pressure', 'humidity_pressure']]
 y = df['Temperature']
 
 

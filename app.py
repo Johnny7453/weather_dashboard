@@ -35,7 +35,7 @@ prediction_df = prediction_df.dropna()
 prediction_df = prediction_df[~prediction_df['Date'].isin(df['Date'])]
 
 # Define features for prediction
-X_new = prediction_df[['Moisture', 'Rain', 'Wind_speed', 'Air_pressure']]
+X_new = prediction_df[['Moisture', 'Rain', 'Wind_speed', 'Air_pressure', 'humidity_pressure']]
 
 # Load the trained model
 model = joblib.load('modelling/temperature_model.pkl')

@@ -53,6 +53,11 @@ data <- data %>%
     Date = make_datetime(year, month, day, hour, minute)
   )%>% select(-station, -year, -month, -day, -time, -hour, -minute) 
 
+# Add interaction variables
+
+# Humidity - pressure
+
+data[,"humidity_pressure"] = data[, "Moisture"] * data[, "Air_pressure"]
 
 if(CREATE_PREDICTION_DATA){
   data_prediction <- subset(data, Date >= as.Date(prediction_data_since))
