@@ -92,14 +92,16 @@ fig.update_layout(
     title='Temperature and Humidity Over Time',
     xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'),
     yaxis=dict(
-        title='Temperature (°C)',
-        titlefont=dict(color='red'),
-        tickfont=dict(color='red')
+        title=dict(
+            text='Temperature (°C)',
+            font=dict(color='red')
+        )
     ),
     yaxis2=dict(
-        title='Humidity (%)',
-        titlefont=dict(color='blue'),
-        tickfont=dict(color='blue'),
+        title=dict(
+            text='Humidity (%)',
+            font=dict(color='blue')
+        ),
         overlaying='y',
         side='right'
     ),
@@ -139,22 +141,24 @@ fig_rain_wind.add_trace(go.Scatter(
 # Update layout for second y-axis
 fig_rain_wind.update_layout(
     title='Amount of Rain and Wind Speed Over Time',
-    xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'),
-    yaxis=dict(
-        title='Rain (mm)',
-        titlefont=dict(color='blue'),
-        tickfont=dict(color='blue')
-    ),
-    yaxis2=dict(
-        title='Wind Speed (m/s)',
-        titlefont=dict(color='lightpink'),
-        tickfont=dict(color='lightpink'),
+     xaxis=dict(title='Date', type='date', tickformat='%Y-%m-%d %H:%M'),
+     yaxis=dict(
+        title=dict(
+            text='Rain (mm)',
+            font=dict(color='blue')
+         )
+     ),
+     yaxis2=dict(
+         title=dict(
+            text='Wind Speed (m/s)',
+            font=dict(color='lightpink')
+        ),
         overlaying='y',
         side='right'
     ),
     legend=dict(x=0, y=1.2),
     template='plotly_white'
-)
+ )
 
 
 app.layout = dbc.Container([
@@ -270,4 +274,4 @@ def toggle_table(n_clicks, current_style):
     return current_style
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run(debug=True)

@@ -1,3 +1,3 @@
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install flask dash pandas plotly
+pip install flask dash pandas plotly dash-bootstrap-components scikit-learn joblib
